@@ -1,0 +1,63 @@
+train_dataset:
+  type: Cityscapes
+  dataset_root: /home/aistudio/data/data64550/cityscapes
+  transforms:
+    - type: ResizeStepScaling
+      min_scale_factor: 0.5
+      max_scale_factor: 2.0
+      scale_step_size: 0.25
+    - type: RandomPaddingCrop
+      crop_size: [1024, 512]
+    - type: RandomHorizontalFlip
+    - type: RandomDistort
+      brightness_range: 0.4
+      contrast_range: 0.4
+      saturation_range: 0.4
+    - type: Normalize
+  mode: train
+
+val_dataset:
+  type: Cityscapes
+  dataset_root: /home/aistudio/data/data64550/cityscapes
+  transforms:
+    - type: Normalize
+  mode: val
+
+model:
+  type: OCRNet
+  backbone:
+    type: HRNet_W48
+  num_classes: 19
+  backbone_indices: [0]
+
+optimizer:
+  type: sgd
+  weight_decay: 0.0002
+
+lr_scheduler:
+  type: ReduceOnPlateau
+  learning_rate: 0.1
+  mode: max
+  factor: 0.7
+  patience: 1
+  verbose: True
+iters: 600000
+batch_size: 4
+
+loss:
+  types:
+    - type: MixedLoss
+      losses:
+        - type: CrossEntropyLoss
+        - type: LovaszSoftmaxLoss
+          ignore_index: 255
+      coef: [0.8, 0.2]
+    - type: MixedLoss
+      losses:
+        - type: CrossEntropyLoss
+        - type: LovaszSoftmaxLoss
+          ignore_index: 255
+      coef: [0.8, 0.2]
+    - type:  DetailAggregateLoss
+      ignore_index: 255
+  coef: [1, 0.4, 0.1]
